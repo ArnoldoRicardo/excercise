@@ -3,33 +3,42 @@ import xml.etree.cElementTree as ET
 
 
 def elem_to_dict_tree(elem):
-    d = {}
+    data = {}
 
     for subelem in elem:
         v = elem_to_dict_tree(subelem)
         tag = subelem.tag
         value = v[tag]
+
         try:
-            d[tag].append(value)
+            data[tag].append(value)
         except AttributeError:
-            d[tag] = [d[tag], value]
+            data[tag] = [data[tag], value]
         except KeyError:
-            d[tag] = value
+            data[tag] = value
     text = elem.text
-    if d:
+    if data:
         if text:
-            d["#text"] = text
+            data["#text"] = text
     else:
-        d = text or None
-    return {elem.tag: d}
+        data = text or ''
+    return {elem.tag: data}
 
 
-def elem_to_json(elem):
+def elem_to_dict(elem):
 
     if hasattr(elem, "getroot"):
         elem = elem.getroot()
-    return jsonlib.dumps(elem_to_dict_tree(elem))
+    
+    data = {}
+    tag = elem.tag
+    data[tag] = []
+    for subelem in elem:
+        data[tag].append(elem_to_dict_tree(subelem))
 
+    if not data[tag]:
+        data[tag] = ''
+    return data
 
 def filter_data(raw_data):
     compact = str(raw_data).replace('\\n', '').replace('  ', '')
@@ -44,4 +53,4 @@ def xml2json(file):
         data += filter_data(chunk)
 
     elem = ET.fromstring(data)
-    return elem_to_json(elem)
+    return elem_to_dict(elem)
